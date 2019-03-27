@@ -93,6 +93,11 @@ view: cf_case_management {
     sql: ${TABLE}.saving ;;
   }
 
+  dimension: scheme {
+    type: string
+    sql: CASE WHEN LEFT(${TABLE}.policy_no_aauicl,6) = 'AAPMB0' THEN 102 ELSE 103 END ;;
+  }
+
   dimension: status {
     type: string
     sql: ${TABLE}.status ;;
@@ -338,6 +343,18 @@ dimension: month_previous {
     }
   }
 
+  measure: open_investigations{
+    type: count
+    filters: {
+      field:  status
+      value: "Investigating"
+    }
+    filters: {
+      field: imageflag
+      value: "' '"
+    }
+  }
+
   measure: open_investigations_last_month {
     type: count
     filters: {
@@ -376,6 +393,18 @@ filters: {
       <p>{{ rendered_value }}<img src="https://findicons.com/files/icons/573/must_have/48/stock_index_down.png" height=20 width=20></p>
     {% endif %}
 ;;
+  }
+
+  measure:  cancelled{
+    type:  count
+    filters: {
+      field: outcome
+      value: "Cancelled"
+    }
+    filters: {
+      field:  imageflag
+      value: "' '"
+    }
   }
 
   measure:  cancelled_this_month{
@@ -417,6 +446,19 @@ filters: {
       value: "last month"
     }
   }
+
+  measure:  void{
+    type:  count
+    filters: {
+      field: outcome
+      value: "Void"
+    }
+    filters: {
+      field:  imageflag
+      value: "' '"
+    }
+  }
+
   measure: void_this_month {
     type:  count
     filters: {
@@ -456,6 +498,19 @@ filters: {
       value: "last month"
     }
   }
+
+  measure:  charged_additional_premium{
+    type:  count
+    filters: {
+      field: outcome
+      value: "Charged AP"
+    }
+    filters: {
+      field:  imageflag
+      value: "' '"
+    }
+  }
+
   measure: charged_additional_premium_this_month {
     type: count
     filters: {
@@ -495,6 +550,19 @@ filters: {
       value: "last month"
     }
   }
+
+  measure:  proportionate_settlement{
+    type:  count
+    filters: {
+      field: outcome
+      value: "Proportionate"
+    }
+    filters: {
+      field:  imageflag
+      value: "' '"
+    }
+  }
+
   measure: proportionate_settlement_this_month {
     type:  count
     filters: {
@@ -549,13 +617,20 @@ filters: {
     {% endif %}
     ;;
   }
+
+  measure: adverse_outcome_rate {
+    type: number
+    sql: 1.0*${adverse_outcomes}/${referrals} ;;
+    value_format_name: percent_2
+  }
+
   measure: adverse_outcome_rate_last_month {
     type: number
     sql: 1.0*${adverse_outcomes_last_month}/${referrals_last_month} ;;
-
+    value_format_name: percent_2
   }
 
-  #----------Create Dummy Table For Transposing Monthly Report----------#
+  #----------Create Dummy Tables For Transposing----------#
 
   dimension: dummy_monthly_report {
     case: {
@@ -597,6 +672,67 @@ filters: {
       }
       when: {
         label: "Claim Savings This Month"
+        sql: 1=1 ;;
+      }
+    }
+  }
+
+  dimension: dummy_hub {
+    case: {
+      when: {
+        label: "Referrals"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Referred"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Referral Rate"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Clear Not Investigated"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Open Investigations"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Cancelled"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Void"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Proportionate Settlement"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Charged Additional Premium"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Propotionate Settlement"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Adverse Outcomes"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Adverse Outcome Rate"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Ap Charged"
+        sql: 1=1 ;;
+      }
+      when: {
+        label: "Claim Savings"
         sql: 1=1 ;;
       }
     }
