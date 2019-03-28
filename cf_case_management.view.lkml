@@ -1,5 +1,13 @@
 view: cf_case_management {
-  sql_table_name: actian.cf_case_management ;;
+  derived_table: {
+    sql: SELECT main.*,
+       investigation_start_date
+FROM actian.cf_case_management main
+  LEFT JOIN (SELECT investigation_number,
+                    date_in AS investigation_start_date
+             FROM actian.cf_case_management
+             WHERE invtransno = 1) og_date ON main.investigation_number = og_date.investigation_number;;
+}
 
   dimension: ap {
     type: number
@@ -37,6 +45,20 @@ view: cf_case_management {
       year
     ]
     sql: ${TABLE}.date_out ;;
+  }
+
+  dimension_group: investigation_start_date {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: to_timestamp(${TABLE}.investigation_start_date) ;;
   }
 
   dimension: imageflag {
@@ -210,8 +232,8 @@ dimension: month_previous {
   measure:  referrals_current_month{
     type:  count
     filters: {
-      field: imageflag
-      value: "' '"}
+      field: status
+      value: "Investigating"}
     filters: {
       field:  date_in_month
       value: "this month"
@@ -229,8 +251,8 @@ dimension: month_previous {
   measure:  referrals_last_month{
     type:  count
     filters: {
-      field: imageflag
-      value: "' '"}
+      field: status
+      value: "Investigating"}
     filters: {
       field:  date_in_month
       value: "last month"
@@ -264,7 +286,7 @@ dimension: month_previous {
       value: "' '"
     }
     filters: {
-      field:  date_in_month
+      field:  investigation_start_date_month
       value: "this month"
     }
     html:
@@ -288,7 +310,7 @@ dimension: month_previous {
       value: "' '"
     }
     filters: {
-      field:  date_in_month
+      field:  investigation_start_date_month
       value: "last month"
     }
   }
@@ -620,7 +642,7 @@ filters: {
 
   measure: adverse_outcome_rate {
     type: number
-    sql: 1.0*${adverse_outcomes}/${referrals} ;;
+    sql: CASE WHEN ${referrals} = 0 THEN NULL ELSE 1.0*${adverse_outcomes}/${referrals} END;;
     value_format_name: percent_2
   }
 
