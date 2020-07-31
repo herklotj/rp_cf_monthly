@@ -1,12 +1,21 @@
 view: cf_case_management {
   derived_table: {
     sql: SELECT main.*,
-       investigation_start_date
+       investigation_start_date,
+       postcode_area
 FROM actian.cf_case_management main
   LEFT JOIN (SELECT investigation_number,
                     date_in AS investigation_start_date
              FROM actian.cf_case_management
-             WHERE invtransno = 1) og_date ON main.investigation_number = og_date.investigation_number;;
+             WHERE invtransno = 1) og_date ON main.investigation_number = og_date.investigation_number
+  LEFT JOIN (SELECT pol.policy_no_aauicl,
+                    postcode_area
+             FROM aap_policy pol
+               LEFT JOIN (SELECT postcode_area,
+                                 client_no_aauicl
+                          FROM aap_addrref a
+                            LEFT JOIN postcode_geography b ON REPLACE (a.postcode,' ','') = b.postcode) addr ON pol.client_no_aauicl = addr.client_no_aauicl
+             WHERE pol.imageflag = ' ') post ON main.policy_no_aauicl = post.policy_no_aauicl;;
 }
 
   dimension: ap {
@@ -145,6 +154,11 @@ dimension: month_previous {
     sql:  add_months(to_date (current_timestamp),-12) ;;
   }
 
+  dimension: postcode_area {
+    type: string
+    map_layer_name: uk_postcode_areas
+    sql: ${TABLE}.postcode_area ;;
+  }
 
   measure: count {
     type: count
